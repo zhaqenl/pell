@@ -7,7 +7,7 @@
 ;;--------------------------------------------------------------------
 ;; Author: Rommel M. Martinez <ebzzry@gmail.com>
 ;; Date created: <2008-05-08 08:41 rmm>
-;; Time-stamp: <2009-02-11 01:12 rmm>
+;; Time-stamp: <2009-03-09 11:42 rmm>
 ;;--------------------------------------------------------------------
 ;; Copyright (C) 2008, Rommel M. Martinez
 ;; All rights reserved.
@@ -95,7 +95,10 @@ Switches:
 -h, --help		Show this help
 -i, --interval		Ping interval. Default: ~A seconds
 -s, --silent		Don't ring the bell when receiving reply packets
-" self *interval*)))
+-n, --notify-timeout    Notification timeout in seconds. Default: ~A seconds
+-N, --no-notify         Disable GUI notifications.
+" self
+*interval* *notify-timeout*)))
 
 
 ;;--------------------------------------------------------------------
