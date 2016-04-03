@@ -1,14 +1,28 @@
-Usage:
+pell
+====
 
-Help summary:
+pell is a trivial tool that emits a notification when a host that you
+ping'd is alive. By default, when a pong is received, the system bell
+emits a short beep, and a desktop notification is displayed.
 
-    cping --help
+## Usage
 
-Ping google.com with default settings:
+To monitor for pongs from `somehost.foo.bar` every second, sounding
+the system bell and displaying a desktop notification if a reply is
+received, run:
 
-    cping google.com
+```
+$ pell somehost.foo.bar
+```
 
-Ping google.com with notifications turned off, disabled system bell
-beeps, stdout and stderr piped to tee and logged to cping.log
+To do the same as above, sans the bell and desktop notification, run:
 
-    cping -N -s google.com | tee -a cping.log
+```
+$ pell -s -n somehost.foo.bar
+```
+
+To monitor for pongs from `somehost.foo.bar` every 30 seconds, run:
+
+```
+$ pell -i 10 somehost.foo.bar
+```
