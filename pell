@@ -1,0 +1,166 @@
+#!/bin/sh
+# -*- mode: scheme -*-
+exec /usr/bin/env scsh -e main -s "$0" "$@"
+!#
+
+;;--------------------------------------------------------------------
+;; Helpers
+;;--------------------------------------------------------------------
+
+;; Doublequote items in a list
+;; (quote-list '(foo bar baz) => '("foo" "bar" "baz")
+(define (quote-list list)
+  (map (lambda (item)
+         (string-append
+          (cond ((number? item) (number->string item))
+                ((symbol? item) (symbol->string item))
+                ((string? item) item))
+          ""))
+       list))
+
+;; Join strings in a list
+;; (strings-join '("foo" "bar" "baz") => "foobarbaz"
+(define (strings-join list)
+  (cond ((null? list) "")
+        (else (string-append
+               (car list)
+               (if (null? (cdr list))
+                   "" " ")
+               (strings-join (cdr list))))))
+
+;; Variables that control whether or not to echo command
+;; before executing
+(define *print-run* #f)
+
+;; Print command to execute then execute command
+(define (print-run command . quiet)
+      (let* ((form (strings-join (quote-list command))))
+        (if (or (not *print-run*)
+                (and (= (length quiet) 1)
+                     (eq? (car quiet) #t)))
+            #f
+            (format #t "~A~%" form))
+        (run (,@command))))
+
+
+;;--------------------------------------------------------------------
+;; Usage and help
+;;--------------------------------------------------------------------
+
+(define *help* #f)
+
+(define (display-usage args)
+  (let ((self (file-name-nondirectory (car args))))
+    (format #t
+            "Usage: ~A [OPTIONS] HOST
+
+OPTIONS:
+-h, --help              Show this help
+-i, --interval          Ping interval. Default: ~A seconds
+-s, --silent            Disable the system bell
+-n, --no-notify         Disable desktop notifications
+-N, --notify-timeout    Notification timeout in seconds. Default: ~A seconds
+
+See https://github.com/ebzzry/pell for more information
+" self *interval* *notify-timeout*)))
+
+
+;;--------------------------------------------------------------------
+;; Main
+;;--------------------------------------------------------------------
+
+(define *timeout* 60)
+
+(define *notify-timeout* 5000)
+
+(define *notify-ok*
+  (if (= (run (pipe (ps ax)
+                    (grep -q notification-daemon)
+                    (grep -v grep)))
+         0)
+      #t
+      #f))
+
+(define *interval* 60)
+
+(define *silent* #f)
+
+(define *notify* #t)
+
+(define (parse-arguments args)
+  (cond ((null? args) args)
+        ((string= (car args) "-i")
+         (set! *interval* (cadr args))
+         (parse-arguments (cddr args)))
+        (else (case (string->symbol (car args))
+                ((-h --help)
+                 (set! *help* #t)
+                 (parse-arguments (cdr args)))
+                ((-s --silent --no-beep)
+                 (set! *silent* #t)
+                 (parse-arguments (cdr args)))
+                ((-N --notify-timeout)
+                 (set! *notify-timeout* (cadr args))
+                 (parse-arguments (cdr args)))
+                ((-n --no-notify)
+                 (set! *notify* #f)
+                 (parse-arguments (cdr args)))
+                (else args)))))
+
+(define (get-interval)
+  (if (string? *interval*)
+      (string->number *interval*)
+      *interval*))
+
+(define (sleep)
+  (process-sleep (get-interval)))
+
+(define (get-ping-reply host)
+  (run/strings
+   (pipe ,(if (string-match "bsd" (os))
+              `(ping -c 1 -t ,*timeout* -Q ,host)
+              `(ping -c 1 -t ,*timeout* ,host))
+         (grep "time=")
+         (sed -e "s/^.*time=//;s/ *ms$//"))))
+
+(define (get-date)
+  (car (run/strings (date "+%Y-%m-%d %H:%M:%S"))))
+
+(define (ring-bell)
+  (if (and (not *silent*)
+           (file-writable? "/dev/console"))
+      (run (echo -e "\007") (> /dev/console))))
+
+(define (notify-user host date pong)
+  (let ((term (getenv "TERM")))
+    (if (and *notify* (not (string=? term "cons25")))
+        (run (notify-send -t ,*notify-timeout*
+                          -u normal
+                          "-i" gtk-dialog-info
+                          ,(format #f "Ping reply from ~A" host)
+                          ,(string-append date " " pong))))))
+
+(define (ping-host host)
+  (let ((output (get-ping-reply host))
+        (date (get-date)))
+    (if (not (null? output))
+        (let ((pong (car output)))
+          (format #t "~&~A ~A~%" date pong)
+          (ring-bell)
+          (notify-user host date pong)
+          (sleep)
+          (ping-host host))
+        (begin
+          (format #t "~&~A~%" date)
+          (sleep)
+          (ping-host host)))))
+
+(define (main args)
+  (if (not (null? (cdr args)))
+      (let ((host (parse-arguments (cdr args))))
+        (cond (*help*
+               (display-usage args)
+               (exit 0))
+              (else
+               (ping-host (car host)))))
+      (display-usage args)))
