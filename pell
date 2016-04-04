@@ -1,6 +1,6 @@
 #!/bin/sh
 # -*- mode: scheme -*-
-exec /usr/bin/env scsh -e main -s "$0" "$@"
+exec /usr/bin/env scsh -o posix-platform-names -e main -s "$0" "$@"
 !#
 
 ;;--------------------------------------------------------------------
@@ -81,7 +81,7 @@ See https://github.com/ebzzry/pell for more information
       #t
       #f))
 
-(define *interval* 60)
+(define *interval* 1)
 
 (define *silent* #f)
 
@@ -117,7 +117,7 @@ See https://github.com/ebzzry/pell for more information
 
 (define (get-ping-reply host)
   (run/strings
-   (pipe ,(if (string-match "bsd" (os))
+   (pipe ,(if (string=? "BSD" (os-name))
               `(ping -c 1 -t ,*timeout* -Q ,host)
               `(ping -c 1 -t ,*timeout* ,host))
          (grep "time=")
@@ -127,9 +127,8 @@ See https://github.com/ebzzry/pell for more information
   (car (run/strings (date "+%Y-%m-%d %H:%M:%S"))))
 
 (define (ring-bell)
-  (if (and (not *silent*)
-           (file-writable? "/dev/console"))
-      (run (echo -e "\007") (> /dev/console))))
+  (if (not *silent*)
+      (run (beep))))
 
 (define (notify-user host date pong)
   (let ((term (getenv "TERM")))
