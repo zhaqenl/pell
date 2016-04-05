@@ -1,9 +1,12 @@
 pell
 ====
 
-pell is a simple tool that emits a notification when a host that you
-ping'd is alive. By default, it runs continuously, and when a pong is
-received, a short beep sound is played.
+pell is a simple periodic host monitor that utilizes ping to check for
+host availability. It can also be used to perform logging functions,
+with an easy-to-parse output suitable for data extraction and
+analysis. By default, when a host that you ping’d is alive, it emits a
+short beep sound. It runs continuously until an INT, TERM, or KILL is
+received.
 
 
 ## Usage
@@ -27,11 +30,20 @@ To do the same as above, with visual notifications, run:
 $ pell -n foo.bar.baz
 ```
 
-To monitor for pongs from `foo.bar.baz` every 30 seconds, run:
+To monitor for pongs from `foo.bar.baz` every minute, saving the
+output to `foo.bar.baz.log` run:
 
 ```
-$ pell -i 30 foo.bar.baz
+$ pell -i 60 foo.bar.baz | tee -a foo.bar.baz.log
 ```
+
+To convert `foo.bar.baz.log` file to CSV, for graphing and data
+analysis:
+
+```
+$ sed 's/ /,/g' foo.bar.baz.log > foo.bar.baz.csv
+```
+
 
 ## Notes
 
