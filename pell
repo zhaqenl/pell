@@ -3,8 +3,8 @@
 exec /usr/bin/env scsh -o posix-platform-names -e main -s "$0" "$@"
 !#
 
-;; Doublequote items in a list
-;; (quote-list '(foo bar baz) => '("foo" "bar" "baz")
+;;; doublequote items in a list
+;;; (quote-list '(foo bar baz) => '("foo" "bar" "baz")
 (define (quote-list list)
   (map (lambda (item)
          (string-append
@@ -14,8 +14,8 @@ exec /usr/bin/env scsh -o posix-platform-names -e main -s "$0" "$@"
           ""))
        list))
 
-;; Join strings in a list
-;; (strings-join '("foo" "bar" "baz") => "foobarbaz"
+;;; join strings in a list
+;;; (strings-join '("foo" "bar" "baz") => "foobarbaz"
 (define (strings-join list)
   (cond ((null? list) "")
         (else (string-append
@@ -24,11 +24,11 @@ exec /usr/bin/env scsh -o posix-platform-names -e main -s "$0" "$@"
                    "" " ")
                (strings-join (cdr list))))))
 
-;; Variables that control whether or not to echo command
-;; before executing
+;;; variables that control whether or not to echo command
+;;; before executing
 (define *print-run* #f)
 
-;; Print command to execute then execute command
+;;; print command to execute then execute command
 (define (print-run command . quiet)
       (let* ((form (strings-join (quote-list command))))
         (if (or (not *print-run*)
@@ -38,10 +38,10 @@ exec /usr/bin/env scsh -o posix-platform-names -e main -s "$0" "$@"
             (format #t "~A~%" form))
         (run (,@command))))
 
-;; Help knob
+;;; help knob
 (define *help* #f)
 
-;; Print to stdout command usage
+;;; print to stdout command usage
 (define (display-usage args)
   (let ((self (file-name-nondirectory (car args))))
     (format #t
@@ -57,27 +57,27 @@ OPTIONS:
 See https://github.com/ebzzry/pell for more information
 " self *interval* *notify-timeout*)))
 
-;; Ping interval
-(define *interval* 1)
+;;; ping interval
+(define *interval* 60)
 
-;; Audio notificatio knob
+;;; audio notification knob
 (define *silent* #f)
 
-;; Visual notification knob
+;;; visual notification knob
 (define *notify* #f)
 
-;; Visual notification timeout knob
+;;; visual notification timeout knob
 (define *notify-timeout* 5000)
 
-;; Primary notification audio file
+;;; primary notification audio file
 (define *notification-file*
   "/usr/share/pell/notification.mp3")
 
-;; Alternate notification audio file
+;;; alternate notification audio file
 (define *notification-file-alternate*
   (string-append (home-dir) "/.pell/notification.mp3"))
 
-;; Procedure to parse command line input
+;;; procedure to parse command line input
 (define (parse-arguments args)
   (cond ((null? args) args)
         ((string= (car args) "-i")
@@ -98,17 +98,17 @@ See https://github.com/ebzzry/pell for more information
                  (parse-arguments (cdr args)))
                 (else args)))))
 
-;; Returns the interval value as number
+;;; returns the interval value as number
 (define (get-interval)
   (if (string? *interval*)
       (string->number *interval*)
       *interval*))
 
-;; Pause ping interation
+;;; pause ping interation
 (define (sleep)
   (process-sleep (get-interval)))
 
-;; Parse text from ping
+;;; parse text from ping
 (define (get-ping-reply host)
   (let ((os (os-name)))
     (run/strings
@@ -118,17 +118,17 @@ See https://github.com/ebzzry/pell for more information
            (grep "time=")
            (sed -e "s/^.*time=//;s/ *ms$//")))))
 
-;; Get current date
+;;; get current date
 (define (get-date)
   (car (run/strings (date "+%Y-%m-%d %H:%M:%S"))))
 
-;; Select notification file from available sources
+;;; select notification file from available sources
 (define (select-notification-file)
   (cond ((file-exists? *notification-file*) *notification-file*)
         ((file-exists? *notification-file-alternate*) *notification-file-alternate*)
         (else #f)))
 
-;; Play the notification audio file using sox's play
+;;; play the notification audio file using sox's play
 (define (play-notification-file)
   (let ((file (select-notification-file)))
     (if (not *silent*)
@@ -136,7 +136,7 @@ See https://github.com/ebzzry/pell for more information
              (run (play ,file)
                   (> 2 /dev/null))))))
 
-;; Display a visual notification using libnotify
+;;; display a visual notification using libnotify
 (define (notify-user host date pong)
   (let ((term (getenv "TERM")))
     (if (and *notify* (not (string=? term "cons25")))
@@ -147,7 +147,7 @@ See https://github.com/ebzzry/pell for more information
                           ,(format #f "Ping reply from ~A" host)
                           ,(string-append date " " pong))))))
 
-;; Ping target host, and handle rest periods
+;;; ping target host, and handle rest periods
 (define (ping-host host)
   (let ((output (get-ping-reply host))
         (date (get-date)))
@@ -163,7 +163,7 @@ See https://github.com/ebzzry/pell for more information
           (sleep)
           (ping-host host)))))
 
-;; Top-level
+;;; top-level
 (define (main args)
   (if (not (null? (cdr args)))
       (let ((host (parse-arguments (cdr args))))
