@@ -57,8 +57,10 @@ OPTIONS:
 See https://github.com/ebzzry/pell for more information
 " self *interval* *notify-timeout*)))
 
+(define version "0.0.2")
+
 ;;; ping interval
-(define *interval* 60)
+(define *interval* 1)
 
 ;;; audio notification knob
 (define *silent* #f)
