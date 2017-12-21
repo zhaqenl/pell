@@ -50,20 +50,22 @@ exec /usr/bin/env scsh -o posix-platform-names -e main -s "$0" "$@"
 OPTIONS:
 -h, --help              Show this help
 -i, --interval          Ping interval. Default: ~A seconds
--s, --silent            Disable audio notification
+-b, --beep-online       Beep if host is up
+-B, --beep-offline      Beep if host is down
 -n, --no-notify         Disable visual notifications
 -N, --notify-timeout    Notification timeout in seconds. Default: ~A seconds
 
 See https://github.com/ebzzry/pell for more information
 " self *interval* *notify-timeout*)))
 
-(define version "0.0.2")
+(define version "0.0.3")
 
 ;;; ping interval
 (define *interval* 1)
 
-;;; audio notification knob
-(define *silent* #f)
+;;; audio notification knobs
+(define *beep-online* #f)
+(define *beep-offline* #f)
 
 ;;; visual notification knob
 (define *notify* #f)
@@ -89,8 +91,13 @@ See https://github.com/ebzzry/pell for more information
                 ((-h --help)
                  (set! *help* #t)
                  (parse-arguments (cdr args)))
-                ((-s --silent --no-beep)
-                 (set! *silent* #t)
+                ((-b --beep-online)
+                 (set! *beep-online* #t)
+                 (set! *beep-offline* #f)
+                 (parse-arguments (cdr args)))
+                ((-B --beep-offline)
+                 (set! *beep-offline* #t)
+                 (set! *beep-online* #f)
                  (parse-arguments (cdr args)))
                 ((-n --notify)
                  (set! *notify* #t)
@@ -133,10 +140,7 @@ See https://github.com/ebzzry/pell for more information
 ;;; play the notification audio file using sox's play
 (define (play-notification-file)
   (let ((file (select-notification-file)))
-    (if (not *silent*)
-        (and file
-             (run (play ,file)
-                  (> 2 /dev/null))))))
+    (and file (run (play ,file) (> 2 /dev/null)))))
 
 ;;; display a visual notification using libnotify
 (define (notify-user host date pong)
@@ -156,12 +160,13 @@ See https://github.com/ebzzry/pell for more information
     (if (not (null? output))
         (let ((pong (car output)))
           (format #t "~&~A ~A~%" date pong)
-          (play-notification-file)
+          (and *beep-online* (play-notification-file))
           (notify-user host date pong)
           (sleep)
           (ping-host host))
         (begin
           (format #t "~&~A~%" date)
+          (and *beep-offline* (play-notification-file))
           (sleep)
           (ping-host host)))))
 
