@@ -11,23 +11,22 @@ received.
 
 ## Usage
 
-To monitor for pongs from `foo.bar.baz` every second, playing an
-audio notification if a reply is received, run:
+To monitor for pongs from `foo.bar.baz` every second:
 
 ```
 $ pell foo.bar.baz
 ```
 
-To do the same as above, without the audio notifications, run:
+To do the same with audio notifications if the host is up:
 
 ```
-$ pell -s foo.bar.baz
+$ pell -b foo.bar.baz
 ```
 
-To do the same as above, with visual notifications, run:
+To do the same with audio notifications if the host is down:
 
 ```
-$ pell -n foo.bar.baz
+$ pell -B foo.bar.baz
 ```
 
 To monitor for pongs from `foo.bar.baz` every minute, saving the
